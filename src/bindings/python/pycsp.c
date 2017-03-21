@@ -2,6 +2,10 @@
 #include <csp/csp.h>
 #include <csp/interfaces/csp_if_zmqhub.h>
 
+#if PY_MAJOR_VERSION == 3
+#define IS_PY3
+#endif
+
 /**
  * csp/csp.h
  */
@@ -265,7 +269,11 @@ int csp_zmqhub_init_w_endpoints(char _addr, char * publisher_url, char * subscri
  */
 static PyObject* pycsp_packet_data(PyObject *self, PyObject *packet_capsule) {
     csp_packet_t* packet = PyCapsule_GetPointer(packet_capsule, "csp_packet_t");
+#ifdef IS_PY3
+    return Py_BuildValue("y#", packet->data, packet->length);
+#else
     return Py_BuildValue("s#", packet->data, packet->length);
+#endif
 }
 
 static PyObject* pycsp_packet_length(PyObject *self, PyObject *packet_capsule) {
@@ -314,44 +322,69 @@ static PyMethodDef pycsp_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-PyMODINIT_FUNC initlibcsp(void) {
-	PyObject* m = Py_InitModule("libcsp", pycsp_methods);
+#ifdef IS_PY3
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "libcsp_python3",
+    NULL, /* module documentation, may be NULL */
+    -1,       /* size of per-interpreter state of the module,
+                 or -1 if the module keeps state in global variables. */
+    pycsp_methods
+};
+#endif
 
-        /**
-         * csp/csp_types.h
-         */
+#ifdef IS_PY3
+PyMODINIT_FUNC PyInit_libcsp_python3(void) {
+#else
+PyMODINIT_FUNC initlibcsp_python2(void) {
+#endif
 
-        /* RESERVED PORTS */
-        PyModule_AddIntConstant(m, "CSP_CMP", CSP_CMP);
-        PyModule_AddIntConstant(m, "CSP_PING", CSP_PING);
-        PyModule_AddIntConstant(m, "CSP_PS", CSP_PS);
-        PyModule_AddIntConstant(m, "CSP_MEMFREE", CSP_MEMFREE);
-        PyModule_AddIntConstant(m, "CSP_REBOOT", CSP_REBOOT);
-        PyModule_AddIntConstant(m, "CSP_BUF_FREE", CSP_BUF_FREE);
-        PyModule_AddIntConstant(m, "CSP_UPTIME", CSP_UPTIME);
-        PyModule_AddIntConstant(m, "CSP_ANY", CSP_MAX_BIND_PORT + 1);
-        PyModule_AddIntConstant(m, "CSP_PROMISC", CSP_MAX_BIND_PORT + 2);
+    PyObject* m;
 
-        /* PRIORITIES */
-        PyModule_AddIntConstant(m, "CSP_PRIO_CRITICAL", CSP_PRIO_CRITICAL);
-        PyModule_AddIntConstant(m, "CSP_PRIO_HIGH", CSP_PRIO_HIGH);
-        PyModule_AddIntConstant(m, "CSP_PRIO_NORM", CSP_PRIO_NORM);
-        PyModule_AddIntConstant(m, "CSP_PRIO_LOW", CSP_PRIO_LOW);
+#ifdef IS_PY3
+    m = PyModule_Create(&moduledef);
+#else
+    m = Py_InitModule("libcsp_python2", pycsp_methods);
+#endif
+    /**
+     * csp/csp_types.h
+     */
 
-        /* FLAGS */
-        PyModule_AddIntConstant(m, "CSP_FFRAG", CSP_FFRAG);
-        PyModule_AddIntConstant(m, "CSP_FHMAC", CSP_FHMAC);
-        PyModule_AddIntConstant(m, "CSP_FXTEA", CSP_FXTEA);
-        PyModule_AddIntConstant(m, "CSP_FRDP", CSP_FRDP);
-        PyModule_AddIntConstant(m, "CSP_FCRC32", CSP_FCRC32);
+    /* RESERVED PORTS */
+    PyModule_AddIntConstant(m, "CSP_CMP", CSP_CMP);
+    PyModule_AddIntConstant(m, "CSP_PING", CSP_PING);
+    PyModule_AddIntConstant(m, "CSP_PS", CSP_PS);
+    PyModule_AddIntConstant(m, "CSP_MEMFREE", CSP_MEMFREE);
+    PyModule_AddIntConstant(m, "CSP_REBOOT", CSP_REBOOT);
+    PyModule_AddIntConstant(m, "CSP_BUF_FREE", CSP_BUF_FREE);
+    PyModule_AddIntConstant(m, "CSP_UPTIME", CSP_UPTIME);
+    PyModule_AddIntConstant(m, "CSP_ANY", CSP_MAX_BIND_PORT + 1);
+    PyModule_AddIntConstant(m, "CSP_PROMISC", CSP_MAX_BIND_PORT + 2);
 
-        /* SOCKET OPTIONS */
+    /* PRIORITIES */
+    PyModule_AddIntConstant(m, "CSP_PRIO_CRITICAL", CSP_PRIO_CRITICAL);
+    PyModule_AddIntConstant(m, "CSP_PRIO_HIGH", CSP_PRIO_HIGH);
+    PyModule_AddIntConstant(m, "CSP_PRIO_NORM", CSP_PRIO_NORM);
+    PyModule_AddIntConstant(m, "CSP_PRIO_LOW", CSP_PRIO_LOW);
 
-        /* CONNECT OPTIONS */
+    /* FLAGS */
+    PyModule_AddIntConstant(m, "CSP_FFRAG", CSP_FFRAG);
+    PyModule_AddIntConstant(m, "CSP_FHMAC", CSP_FHMAC);
+    PyModule_AddIntConstant(m, "CSP_FXTEA", CSP_FXTEA);
+    PyModule_AddIntConstant(m, "CSP_FRDP", CSP_FRDP);
+    PyModule_AddIntConstant(m, "CSP_FCRC32", CSP_FCRC32);
 
-        /**
-         * csp/rtable.h
-         */
-        PyModule_AddIntConstant(m, "CSP_NODE_MAC", CSP_NODE_MAC);
+    /* SOCKET OPTIONS */
+
+    /* CONNECT OPTIONS */
+
+    /**
+     * csp/rtable.h
+     */
+    PyModule_AddIntConstant(m, "CSP_NODE_MAC", CSP_NODE_MAC);
+
+#ifdef IS_PY3
+        return m;
+#endif
 }
 
