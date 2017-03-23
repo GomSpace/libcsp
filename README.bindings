@@ -1,0 +1,6 @@
+
+Build like this:
+./waf configure build dist --enable-bindings --enable-if-zmqhub --enable-crc32
+
+Run example like this:
+PYTHONPATH=src/bindings/python python examples/python_bindings_example.py

@@ -158,10 +158,14 @@ def configure(ctx):
         ctx.check_cfg(package='libzmq', args='--cflags --libs')
         ctx.env.append_unique('LIBS', ctx.env.LIB_LIBZMQ)
 
+    if ctx.options.enable_bindings:
+        ctx.check_cfg(package='python3', args='--cflags --libs')
+        ctx.check_cfg(package='python2', args='--cflags --libs')
+
     # Store configuration options
     ctx.env.ENABLE_BINDINGS = ctx.options.enable_bindings
     ctx.env.ENABLE_EXAMPLES = ctx.options.enable_examples
-    
+
     # Create config file
     if not ctx.options.disable_output:
         ctx.env.append_unique('FILES_CSP', 'src/csp_debug.c')
@@ -186,7 +190,7 @@ def configure(ctx):
     if ctx.options.enable_xtea:
         ctx.env.append_unique('FILES_CSP', 'src/crypto/csp_xtea.c')
         ctx.env.append_unique('FILES_CSP', 'src/crypto/csp_sha1.c')
-        
+
     ctx.env.append_unique('FILES_CSP', 'src/rtable/csp_rtable_' + ctx.options.with_rtable  + '.c')
 
     ctx.define_cond('CSP_DEBUG', not ctx.options.disable_output)
@@ -205,7 +209,7 @@ def configure(ctx):
     ctx.define('CSP_RDP_MAX_WINDOW', ctx.options.with_rdp_max_window)
     ctx.define('CSP_PADDING_BYTES', ctx.options.with_padding)
     ctx.define('CSP_CONNECTION_SO', ctx.options.with_connection_so)
-    
+
     if ctx.options.with_bufalign != None:
         ctx.define('CSP_BUFFER_ALIGN', ctx.options.with_bufalign)
 
@@ -232,7 +236,7 @@ def configure(ctx):
     ctx.define('LIBCSP_VERSION', VERSION)
 
     ctx.write_config_header('include/csp/csp_autoconfig.h', top=True, remove=True)
-    
+
 def build(ctx):
 
     # Set install path for header files
@@ -266,9 +270,19 @@ def build(ctx):
 
     # Build shared library for Python bindings
     if ctx.env.ENABLE_BINDINGS:
-        ctx.shlib(source=ctx.path.ant_glob(ctx.env.FILES_CSP),
-            target = 'csp',
-            includes= ctx.env.INCLUDES_CSP,
+
+        # python 3
+        ctx.shlib(source=ctx.path.ant_glob(ctx.env.FILES_CSP) + ['src/bindings/python/pycsp.c'],
+            target = 'csp_python3',
+            includes= ctx.env.INCLUDES_CSP + ctx.env.INCLUDES_PYTHON3,
+            export_includes = 'include',
+            use = ['include'],
+            lib = ctx.env.LIBS)
+
+        ## python 2
+        ctx.shlib(source=ctx.path.ant_glob(ctx.env.FILES_CSP) + ['src/bindings/python/pycsp.c'],
+            target = 'csp_python2',
+            includes= ctx.env.INCLUDES_CSP + ctx.env.INCLUDES_PYTHON2,
             export_includes = 'include',
             use = ['include'],
             lib = ctx.env.LIBS)
@@ -302,3 +316,11 @@ def build(ctx):
 
 def dist(ctx):
     ctx.excl = 'build/* **/.* **/*.pyc **/*.o **/*~ *.tar.gz'
+
+    # not much though has gone into this yet, but it builds a package that can be used by the example...
+    # we need to enhance this with some sort of real distribution, e.g. setuptools
+    import shutil
+    import os
+    shutil.copy('build/libcsp_python2.so', 'src/bindings/python/libcsp')
+    shutil.copy('build/libcsp_python3.so', 'src/bindings/python/libcsp')
+
