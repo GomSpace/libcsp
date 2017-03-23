@@ -1,6 +1,7 @@
 #include <Python.h>
 #include <csp/csp.h>
 #include <csp/interfaces/csp_if_zmqhub.h>
+#include <csp/interfaces/csp_if_can.h>
 
 #if PY_MAJOR_VERSION == 3
 #define IS_PY3
@@ -263,6 +264,19 @@ static PyObject* pycspzmq_csp_zmqhub_init(PyObject *self, PyObject *args) {
 int csp_zmqhub_init_w_endpoints(char _addr, char * publisher_url, char * subscriber_url);
 */
 
+/**
+ * csp/interfaces/csp_if_can.h
+*/
+static PyObject* pycspzmq_csp_can_init(PyObject *self, PyObject *args) {
+    const char * ifc = "can0";
+    uint8_t mode;
+    struct csp_can_config conf = {.ifc = (char*)ifc};
+    if (!PyArg_ParseTuple(args, "b", &mode))
+        return NULL;
+
+    return Py_BuildValue("i", csp_can_init(mode, &conf));
+}
+
 
 /**
  * Helpers - accessing csp_packet_t members
@@ -286,6 +300,10 @@ static PyObject* pycsp_packet_length(PyObject *self, PyObject *packet_capsule) {
  */
 static PyObject* pycspzmq_csp_zmqhub_if(PyObject *self, PyObject *args) {
     return PyCapsule_New(&csp_if_zmqhub, "csp_iface_t", NULL);
+}
+
+static PyObject* pycspzmq_csp_can_if(PyObject *self, PyObject *args) {
+    return PyCapsule_New(&csp_if_can, "csp_iface_t", NULL);
 }
 
 static PyMethodDef pycsp_methods[] = {
@@ -313,8 +331,12 @@ static PyMethodDef pycsp_methods[] = {
     /* csp/interfaces/csp_if_zmqhub.h */
     {"csp_zmqhub_init", pycspzmq_csp_zmqhub_init, METH_VARARGS, ""},
 
+    /* csp/interfaces/csp_if_can.h */
+    {"csp_can_init", pycspzmq_csp_can_init, METH_VARARGS, ""},
+
     /* helpers */
     {"csp_zmqhub_if", pycspzmq_csp_zmqhub_if, METH_NOARGS, ""},
+    {"csp_can_if", pycspzmq_csp_can_if, METH_NOARGS, ""},
     {"packet_length", pycsp_packet_length, METH_O, ""},
     {"packet_data", pycsp_packet_data, METH_O, ""},
 
@@ -382,6 +404,12 @@ PyMODINIT_FUNC initlibcsp_python2(void) {
      * csp/rtable.h
      */
     PyModule_AddIntConstant(m, "CSP_NODE_MAC", CSP_NODE_MAC);
+
+    /**
+     * csp/interfaces/csp_if_can.h
+     */
+    PyModule_AddIntConstant(m, "CSP_CAN_MASKED", CSP_CAN_MASKED);
+    PyModule_AddIntConstant(m, "CSP_CAN_PROMISC", CSP_CAN_PROMISC);
 
 #ifdef IS_PY3
         return m;
