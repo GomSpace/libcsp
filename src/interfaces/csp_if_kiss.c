@@ -245,8 +245,12 @@ void csp_kiss_init(csp_iface_t * csp_iface, csp_kiss_handle_t * csp_kiss_handle,
 	csp_kiss_handle->rx_packet = NULL;
 	csp_kiss_handle->rx_mode = KISS_MODE_NOT_STARTED;
 
-	/* Setop other mandatories */
-	csp_iface->mtu = KISS_MTU;
+        /* Set default MTU if not given */
+        if (csp_iface->mtu == 0) {
+            csp_iface->mtu = KISS_MTU;
+        }
+
+	/* Setup other mandatories */
 	csp_iface->nexthop = csp_kiss_tx;
 	csp_iface->name = name;
 
