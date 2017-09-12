@@ -4,7 +4,7 @@
 # ./waf distclean configure build --enable-bindings --enable-crc32 --enable-rdp --enable-if-zmq
 
 # Can be run from root of libcsp like this:
-# LD_LIBRARY_PATH=build PYTHONPATH=bindings/python:build python examples/python_bindings_example_srv.py
+# LD_LIBRARY_PATH=build PYTHONPATH=bindings/python:build python examples/python_bindings_example_server.py
 #
 
 import os
@@ -27,9 +27,9 @@ if __name__ == "__main__":
     csp.set_revision("1.2.3")
 
     # and read it back
-    print csp.get_hostname()
-    print csp.get_model()
-    print csp.get_revision()
+    print (csp.get_hostname())
+    print (csp.get_model())
+    print (csp.get_revision())
 
     # start listening for packets...
     sock = csp.socket()
@@ -40,10 +40,10 @@ if __name__ == "__main__":
         if not conn:
             continue
 
-        print "connection: source=%i:%i, dest=%i:%i" % (csp.conn_src(conn),
+        print ("connection: source=%i:%i, dest=%i:%i" % (csp.conn_src(conn),
                                                         csp.conn_sport(conn),
                                                         csp.conn_dst(conn),
-                                                        csp.conn_dport(conn))
+                                                        csp.conn_dport(conn)))
 
         while True:
             packet = csp.read(conn)
@@ -53,7 +53,7 @@ if __name__ == "__main__":
             if csp.conn_dport(conn) == 10:
                 data = bytearray(csp.packet_get_data(packet))
                 length = csp.packet_get_length(packet)
-                print("got packet, len=" + str(length) + ", data=" + ''.join('{:02x}'.format(x) for x in data))
+                print ("got packet, len=" + str(length) + ", data=" + ''.join('{:02x}'.format(x) for x in data))
 
                 data[0] = data[0] + 1
                 reply_packet = csp.buffer_get(1)

@@ -28,15 +28,15 @@ if __name__ == "__main__":
     if rc == csp.CSP_ERR_NONE:
         print (host, model, rev, date, time)
     else:
-        print "error in cmp_ident, rc=%i" % (rc)
+        print ("error in cmp_ident, rc=%i" % (rc))
 
     ## transaction
     outbuf = bytearray().fromhex('01')
     inbuf = bytearray(1)
-    print "using csp_transaction to send a single byte"
+    print ("using csp_transaction to send a single byte")
     if csp.transaction(0, 27, 10, 1000, outbuf, inbuf) < 1:
-        print "csp_transaction failed"
+        print ("csp_transaction failed")
     else:
-        print "got reply, data=" + ''.join('{:02x}'.format(x) for x in inbuf)
+        print ("got reply, data=" + ''.join('{:02x}'.format(x) for x in inbuf))
 
 
