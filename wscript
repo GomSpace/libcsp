@@ -313,6 +313,13 @@ def build(ctx):
                 includes = ctx.env.INCLUDES_CSP,
                 lib = ctx.env.LIBS,
                 use = 'csp')
+            
+        if ctx.options.enable_if_zmqhub:
+            ctx.program(source = 'examples/zmqproxy.c',
+                        target = 'zmqproxy',
+                        includes = ctx.env.INCLUDES_CSP,
+                        lib = ctx.env.LIBS,
+                        use = 'csp')
 
         if 'posix' in ctx.env.OS:
             ctx.program(source = 'examples/csp_if_fifo.c',

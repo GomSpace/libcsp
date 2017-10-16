@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 # libcsp must be build with at least these options to run this example server:
-# ./waf distclean configure build --enable-bindings --enable-crc32 --enable-rdp --enable-if-zmq
+# ./waf distclean configure build --enable-bindings --enable-crc32 --enable-rdp --enable-if-zmq --enable-examples
 
 # Can be run from root of libcsp like this:
 # LD_LIBRARY_PATH=build PYTHONPATH=bindings/python:build python examples/python_bindings_example_server.py
@@ -11,8 +11,12 @@ import os
 import time
 import sys
 import libcsp as csp
+import subprocess
 
 if __name__ == "__main__":
+
+    # start a zmqproxy to transport messages to and from the client
+    zmqp = subprocess.Popen('build/zmqproxy')
 
     # init csp
     csp.buffer_init(10, 300)
