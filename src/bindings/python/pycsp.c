@@ -545,6 +545,29 @@ static PyObject* pycsp_cmp_ident(PyObject *self, PyObject *args) {
                          msg.ident.time);
 }
 
+/*
+ * static inline int csp_cmp_route_set(uint8_t node, uint32_t timeout,
+ *                                 struct csp_cmp_message *msg)
+ */
+static PyObject* pycsp_cmp_route_set(PyObject *self, PyObject *args) {
+    uint8_t node;
+    uint32_t timeout = 500;
+    uint8_t addr;
+    uint8_t mac;
+    char* ifstr;
+    if (!PyArg_ParseTuple(args, "bibbs", &node, &timeout, &addr, &mac, &ifstr)) {
+        return NULL; // TypeError is thrown
+    }
+
+    struct csp_cmp_message msg;
+    msg.route_set.dest_node = addr;
+    msg.route_set.next_hop_mac = mac;
+    strncpy(msg.route_set.interface, ifstr, CSP_CMP_ROUTE_IFACE_LEN);
+    int rc = csp_cmp_route_set(node, timeout, &msg);
+    return Py_BuildValue("i",
+                         rc);
+}
+
 
 /**
  * csp/interfaces/csp_if_zmqhub.h
@@ -648,6 +671,7 @@ static PyMethodDef methods[] = {
 
     /* csp/csp_cmp.h */
     {"cmp_ident", pycsp_cmp_ident, METH_VARARGS, ""},
+    {"cmp_route_set", pycsp_cmp_route_set, METH_VARARGS, ""},
 
     /* csp/interfaces/csp_if_zmqhub.h */
     {"zmqhub_init", pycsp_zmqhub_init, METH_VARARGS, ""},
