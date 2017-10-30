@@ -6,6 +6,8 @@
 #include <csp/csp_buffer.h>
 #include <csp/csp_cmp.h>
 #include <csp/interfaces/csp_if_zmqhub.h>
+#include <csp/interfaces/csp_if_kiss.h>
+#include <csp/drivers/usart.h>
 
 #if PY_MAJOR_VERSION == 3
 #define IS_PY3
@@ -600,6 +602,37 @@ static PyObject* pycsp_zmqhub_init(PyObject *self, PyObject *args) {
 }
 
 /**
+ * csp/interfaces/csp_if_kiss.h
+ */
+
+/*
+ * int csp_kiss_init(char addr, char * host);
+ */
+static PyObject* pycsp_kiss_init(PyObject *self, PyObject *args) {
+	char* device;
+	uint32_t baudrate = 500000;
+	uint32_t mtu = 512; 
+	const char* if_name = "KISS";
+	if (!PyArg_ParseTuple(args, "s|IIs", &device, &baudrate, &mtu, &if_name)) {
+		return NULL; // TypeError is thrown
+	}
+
+	static csp_iface_t csp_if_kiss;
+	static csp_kiss_handle_t csp_kiss_driver;
+	csp_if_kiss.mtu = (uint16_t) mtu;
+	struct usart_conf conf = {.device = device, .baudrate = baudrate};
+	csp_kiss_init(&csp_if_kiss, &csp_kiss_driver, usart_putc, usart_insert, if_name);
+	usart_init(&conf);
+	
+	void my_usart_rx(uint8_t * buf, int len, void * pxTaskWoken) {
+		csp_kiss_rx(&csp_if_kiss, buf, len, pxTaskWoken);
+	}
+	usart_set_callback(my_usart_rx);
+
+	Py_RETURN_NONE;
+}
+
+/**
  * Helpers - accessing csp_packet_t members
  */
 static PyObject* pycsp_packet_set_data(PyObject *self, PyObject *args) {
@@ -689,6 +722,7 @@ static PyMethodDef methods[] = {
 
     /* csp/interfaces/csp_if_zmqhub.h */
     {"zmqhub_init", pycsp_zmqhub_init, METH_VARARGS, ""},
+    {"kiss_init", pycsp_kiss_init, METH_VARARGS, ""},
 
     /* helpers */
     {"packet_get_length", pycsp_packet_get_length, METH_O, ""},
