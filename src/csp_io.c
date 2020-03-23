@@ -56,6 +56,9 @@ static const char *csp_hostname = NULL;
 static const char *csp_model = NULL;
 static const char *csp_revision = GIT_REV;
 
+extern csp_manipulator_t csp_packet_manipulator;
+extern void* csp_packet_manipulator_user_data;
+
 #ifdef CSP_USE_PROMISC
 extern csp_queue_handle_t csp_promisc_queue;
 #endif
@@ -253,6 +256,13 @@ int csp_send_direct(csp_id_t idout, csp_packet_t * packet, csp_iface_t * ifout, 
 	csp_log_packet("OUT: S %u, D %u, Dp %u, Sp %u, Pr %u, Fl 0x%02X, Sz %u VIA: %s",
 		idout.src, idout.dst, idout.dport, idout.sport, idout.pri, idout.flags, packet->length, ifout->name);
 
+	// This is called from router or during send.
+	// Packets at this point may be encrypted or raw
+	// Call encrypt function here
+	// If the packet is routed (i.e. has CRC then the CRC must be replaced???)
+	// or should the enc/dec function be called after the CRC operation? (below)
+	// ... and then encapsulate the CRC inside the encrypted data? (that would actually work...)
+
 	/* Copy identifier to packet (before crc, xtea and hmac) */
 	packet->id.ext = idout.ext;
 
@@ -320,6 +330,10 @@ int csp_send_direct(csp_id_t idout, csp_packet_t * packet, csp_iface_t * ifout, 
 			goto tx_err;
 #endif
 		}
+	}
+
+	if (csp_packet_manipulator) {
+		csp_packet_manipulator(packet, ifout, csp_packet_manipulator_user_data);
 	}
 
 	/* Store length before passing to interface */

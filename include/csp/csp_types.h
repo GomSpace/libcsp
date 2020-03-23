@@ -229,6 +229,9 @@ typedef struct csp_conn_s csp_conn_t;
 #define CSP_REBOOT_MAGIC		0x80078007
 #define CSP_REBOOT_SHUTDOWN_MAGIC	0xD1E5529A
 
+typedef int (*csp_manipulator_t)(csp_packet_t* packet, csp_iface_t* interface, void* user_data);
+void csp_set_packet_manipulator(csp_manipulator_t func_ptr, void* user_data);
+
 #ifdef __cplusplus
 }
 #endif

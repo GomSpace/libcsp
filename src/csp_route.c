@@ -41,6 +41,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "csp_dedup.h"
 #include "transport/csp_transport.h"
 
+
+csp_manipulator_t csp_packet_manipulator = NULL;
+void* csp_packet_manipulator_user_data = NULL;
+void csp_set_packet_manipulator(csp_manipulator_t func_ptr, void* user_data)
+{
+	csp_packet_manipulator = func_ptr;
+	csp_packet_manipulator_user_data = user_data;
+}
+
 /**
  * Check supported packet options
  * @param interface pointer to incoming interface
@@ -240,6 +249,11 @@ int csp_route_work(uint32_t timeout) {
 
 	/* The message is to me, search for incoming socket */
 	socket = csp_port_get_socket(packet->id.dport);
+
+	// CALL DECRYPT (if we are the OBC / crypto node)
+	if (csp_packet_manipulator) {
+		csp_packet_manipulator(packet, input.interface, csp_packet_manipulator_user_data);
+	}	
 
 	/* If the socket is connection-less, deliver now */
 	if (socket && (socket->opts & CSP_SO_CONN_LESS)) {
