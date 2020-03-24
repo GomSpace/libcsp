@@ -41,8 +41,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "csp_dedup.h"
 #include "transport/csp_transport.h"
 
+// ADDED
+bool use_crypto_gateway = false;  // Feature enable/disable
+uint8_t crypto_gw_addr = 0;       // Set from outside /config
+uint8_t crypto_split_addr = 15;
 
-csp_manipulator_t csp_packet_manipulator = NULL;
+void csp_set_manipulator_gateway(uint8_t gw_address, uint8_t split_addr) 
+{
+	if (crypto_gw_addr < 30 && split_addr < 30 && crypto_gw_addr < split_addr) {
+		crypto_gw_addr = crypto_gw_addr;
+		crypto_split_addr = split_addr;
+	}
+}
+
+csp_manipulator_t csp_packet_manipulator = NULL; 
 void* csp_packet_manipulator_user_data = NULL;
 void csp_set_packet_manipulator(csp_manipulator_t func_ptr, void* user_data)
 {
@@ -219,11 +231,27 @@ int csp_route_work(uint32_t timeout) {
 	input.interface->rx++;
 	input.interface->rxbytes += packet->length;
 
-	/* If the message is not to me, route the message to the correct interface */
-	if ((packet->id.dst != csp_get_address()) && (packet->id.dst != CSP_BROADCAST_ADDR)) {
+	// ADDED
+	bool forced_routing = false;
+	if (crypto_gw_addr > 0) {
+		if (packet->id.dst == csp_get_address() && (packet->id.flags & CSP_CRYPTO_AES256)) {
+			// If the packet is for me and it is encrypted, force it to be routed
+			forced_routing = true;
+		}
+	}
+
+    /* If the message is not to me, route the message to the correct interface */
+	//if ((packet->id.dst != csp_get_address()) && (packet->id.dst != CSP_BROADCAST_ADDR)) {
+	if (forced_routing || ((packet->id.dst != csp_get_address()) && (packet->id.dst != CSP_BROADCAST_ADDR))) {		
 
 		/* Find the destination interface */
-		csp_iface_t * dstif = csp_rtable_find_iface(packet->id.dst);
+		csp_iface_t * dstif = NULL;
+		if (forced_routing) {
+			dstif = csp_rtable_find_iface(crypto_gw_addr);
+			csp_log_packet("Re-routing to decryptor");
+		} else {
+        	dstif = csp_rtable_find_iface(packet->id.dst);
+        }
 
 		/* If the message resolves to the input interface, don't loop it back out */
 		if ((dstif == NULL) || ((dstif == input.interface) && (input.interface->split_horizon_off == 0))) {
@@ -250,6 +278,7 @@ int csp_route_work(uint32_t timeout) {
 	/* The message is to me, search for incoming socket */
 	socket = csp_port_get_socket(packet->id.dport);
 
+	// ADDED
 	// CALL DECRYPT (if we are the OBC / crypto node)
 	if (csp_packet_manipulator) {
 		csp_packet_manipulator(packet, input.interface, csp_packet_manipulator_user_data);

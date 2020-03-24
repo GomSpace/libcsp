@@ -248,6 +248,16 @@ int csp_send_direct(csp_id_t idout, csp_packet_t * packet, csp_iface_t * ifout, 
 		goto err;
 	}
 
+	extern uint8_t crypto_gw_addr;
+	extern uint8_t crypto_split_addr;
+	if (crypto_gw_addr > 0) {
+		if (packet->id.src == csp_get_address() && packet->id.dst > crypto_split_addr && !(packet->id.flags & CSP_CRYPTO_AES256)) {
+			// If the packet is from me to the encrypted segment and it is not encrypted force it to the gw
+			ifout = csp_rtable_find_iface(crypto_gw_addr);
+			csp_log_packet("Re-routing to encryptor");
+		}
+	}
+
 	if ((ifout == NULL) || (ifout->nexthop == NULL)) {
 		csp_log_error("No route to host: %#08x", idout.ext);
 		goto err;
