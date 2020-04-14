@@ -152,7 +152,7 @@ def configure(ctx):
     # Add Python bindings
     if ctx.options.enable_python3_bindings:
         ctx.env.LIBCSP_PYTHON3 = ctx.check_cfg(package='python3', args='--cflags --libs', atleast_version='3.5',
-                                               mandatory=True)
+                                               mandatory=False)
 
     # Set defines for enabling features
     ctx.define('CSP_DEBUG', not ctx.options.disable_output)
@@ -204,13 +204,13 @@ def build(ctx):
         install_path=install_path)
 
     # Build shared library and Python bindings
-    if ctx.env.LIBCSP_PYTHON3:
-        ctx.shlib(source=ctx.path.ant_glob(ctx.env.FILES_CSP),
-                  name='csp_shlib',
-                  target='csp',
-                  use=['csp_h', 'util_shlib'],
-                  lib=ctx.env.LIBS)
+    ctx.shlib(source=ctx.path.ant_glob(ctx.env.FILES_CSP),
+              name='csp_shlib',
+              target='csp',
+              use=['csp_h', 'util_shlib'],
+              lib=ctx.env.LIBS)
 
+    if ctx.env.LIBCSP_PYTHON3:
         ctx.shlib(source=ctx.path.ant_glob('src/bindings/python/**/*.c'),
                   target='csp_py3',
                   includes=ctx.env.INCLUDES_PYTHON3,
