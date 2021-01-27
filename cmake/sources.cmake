@@ -53,7 +53,7 @@ set(SOURCES
     src/rtable/csp_rtable.c
     src/rtable/csp_rtable_cidr.c
     src/rtable/csp_rtable_internal.h
-    src/rtable/csp_rtable_static.c
+    #src/rtable/csp_rtable_static.c
     src/transport/csp_rdp.c
     src/transport/csp_transport.h
     src/transport/csp_udp.c

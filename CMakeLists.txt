@@ -15,4 +15,4 @@ include_directories (include)
 install(TARGETS csp)
 
 # Additional install step installing public header files retaining original structure
-install(DIRECTORY "include/gs" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(DIRECTORY "include/csp" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
